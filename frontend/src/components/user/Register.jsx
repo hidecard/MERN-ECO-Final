@@ -1,36 +1,51 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate } from 'react-router-dom';
+import { register } from '../../lib/api';
+import { toast } from 'react-toastify';
 
-function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    // Mock validation
-    if (name.trim().length < 2) {
-      setError('Name must be at least 2 characters');
-      setLoading(false);
-      return;
-    }
-    if (!email.includes('@') || !email.includes('.')) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-    setLoading(false);
+function Register() { 
+  const [name, setName] = useState(''); 
+  const [email, setEmail] = useState(''); 
+  const [password, setPassword] = useState(''); 
+  const [error, setError] = useState(null); 
+  const [loading, setLoading] = useState(false); 
+  const navigate = useNavigate(); 
+  
+  const handleSubmit = async (e) => { 
+    e.preventDefault(); 
+    setError(null); 
+    setLoading(true); 
+  
+    if (name.trim().length < 2) { 
+      setError('Name must be at least 2 characters'); 
+      setLoading(false); 
+      return; 
+    } 
+    if (!email.includes('@') || !email.includes('.')) { 
+      setError('Please enter a valid email address'); 
+      setLoading(false); 
+      return; 
+    } 
+    if (password.length < 6) { 
+      setError('Password must be at least 6 characters'); 
+      setLoading(false); 
+      return; 
+    } 
+  
+    try { 
+      const { token } = await register({ name, email, password }); 
+      console.log('Register token:', token); 
+      localStorage.setItem('token', token); 
+      toast.success('Registered successfully'); 
+      navigate('/'); 
+    } catch (error) { 
+      console.error('Register error:', error); 
+      setError(error.message || 'Failed to register. Email may already be in use.'); 
+      toast.error(error.message || 'Failed to register'); 
+    } finally { 
+      setLoading(false); 
+    } 
   };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">

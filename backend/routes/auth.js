@@ -1,46 +1,57 @@
-const express = require('express'); 
-const router = express.Router(); 
-const bcrypt = require('bcryptjs'); 
-const jwt = require('jsonwebtoken'); 
-const User = require('../models/User'); 
+const express = require("express");
+const router = express.Router();
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
 // for register 
 
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        //  validate input
+        // Validate input
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'All fields are required' });
         }
-        
-        // check if user already exists
+
+        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // hash the password
-
+        // Hash the password
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        // create new user
-        const User = new User({
+        // Create new user
+        const newUser = new User({
             name,
             email,
             password: passwordHash,
-            role : "user",
+            role: "user",
         });
         await newUser.save();
 
-        // create token
-        const token = jwt.sign({ id: User._id , role: User.role }, process.env.JWT_SECRET, {
+        // Create token
+        const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
             expiresIn: '1d',
         });
 
+        // Send response
+        res.status(201).json({
+            token,
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role,
+            }
+        });
+
     } catch (error) {
-        console.error('Register error: ' , error);
+        console.error('Register error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
