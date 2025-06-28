@@ -1,165 +1,253 @@
-import { useState } from 'react';
-     import { mockUsers } from '../../lib/mockData';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '../../lib/api';
+import { toast } from 'react-toastify';
 
-     function UsersAdmin() {
-       const [users, setUsers] = useState(mockUsers);
+function UsersAdmin() {
+  const { user, loading: authLoading } = useAuth(); // Get user and auth loading state
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'user' });
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-       const [form, setForm] = useState({
-         name: '',
-         email: '',
-         password: '',
-         role: 'user',
-       });
-       const [editingId, setEditingId] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (authLoading) return; // Wait for auth to finish loading
+      if (!user || !user.token) {
+        setError('Please log in as an admin');
+        setLoading(false);
+        return;
+      }
+      if (!user.isAdmin) {
+        setError('You must be an admin to access this page');
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const usersData = await getAdminUsers(user.token);
+        setUsers(usersData);
+      } catch (error) {
+        setError(error.message || 'Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user, authLoading]);
 
-       const handleSubmit = (e) => {
-         e.preventDefault();
-         if (!form.name || !form.email || (!editingId && !form.password)) {
-           alert(!editingId ? 'Please fill in all required fields' : 'Name and email are required');
-           return;
-         }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingId) {
+        const updateData = { name: form.name, email: form.email, role: form.role };
+        if (form.password) updateData.password = form.password;
+        const updatedUser = await updateAdminUser(user.token, editingId, updateData);
+        setUsers(users.map((u) => (u._id === editingId ? updatedUser : u)));
+        toast.success('User updated successfully');
+      } else {
+        if (!form.password) {
+          toast.error('Password is required for new users');
+          return;
+        }
+        const newUser = await createAdminUser(user.token, form);
+        setUsers([...users, newUser]);
+        toast.success('User created successfully');
+      }
+      setForm({ name: '', email: '', password: '', role: 'user' });
+      setEditingId(null);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save user');
+    }
+  };
 
-         const userData = {
-           name: form.name,
-           email: form.email,
-           role: form.role,
-           ...(form.password && { password: form.password }),
-         };
+  const handleEdit = (user) => {
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role,
+    });
+    setEditingId(user._id);
+  };
 
-         if (editingId) {
-           setUsers(users.map((u) => (u._id === editingId ? { ...u, ...userData } : u)));
-           alert('User updated');
-         } else {
-           const newUser = { _id: `user${users.length + 1}`, ...userData };
-           setUsers([...users, newUser]);
-           alert('User created');
-         }
-         setForm({ name: '', email: '', password: '', role: 'user' });
-         setEditingId(null);
-       };
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await deleteAdminUser(user.token, id);
+      setUsers(users.filter((u) => u._id !== id));
+      toast.success('User deleted successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete user');
+    }
+  };
 
-       const handleEdit = (user) => {
-         setForm({
-           name: user.name,
-           email: user.email,
-           password: '',
-           role: user.role,
-         });
-         setEditingId(user._id);
-       };
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <svg className="animate-spin h-8 w-8 text-orange-600 mx-auto" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z" />
+        </svg>
+        <p className="mt-2 text-gray-600">Loading authentication...</p>
+      </div>
+    );
+  }
 
-       const handleDelete = (id) => {
-         if (!window.confirm('Are you sure you want to delete this user?')) return;
-         setUsers(users.filter((u) => u._id !== id));
-         alert('User deleted');
-       };
+  if (!user || !user.token || !user.isAdmin) {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <p className="text-red-500 text-lg font-semibold">{error || 'Please log in as an admin.'}</p>
+        <button
+          onClick={() => navigate('/login')}
+          className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
 
-       return (
-         <div className="p-4">
-           <h1 className="mb-6 text-3xl font-bold text-orange-600">Manage Users</h1>
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <svg className="animate-spin h-8 w-8 text-orange-600 mx-auto" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z" />
+        </svg>
+        <p className="mt-2 text-gray-600">Loading users...</p>
+      </div>
+    );
+  }
 
-           <form onSubmit={handleSubmit} className="p-6 mb-8 bg-white rounded-lg shadow-md">
-             <h2 className="mb-4 text-2xl font-semibold text-orange-600">
-               {editingId ? 'Edit User' : 'Create User'}
-             </h2>
-             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-               <div>
-                 <label className="block text-gray-700">Name</label>
-                 <input
-                   type="text"
-                   value={form.name}
-                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                   required
-                 />
-               </div>
-               <div>
-                 <label className="block text-gray-700">Email</label>
-                 <input
-                   type="email"
-                   value={form.email}
-                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                   required
-                 />
-               </div>
-               <div>
-                 <label className="block text-gray-700">
-                   {editingId ? 'New Password (optional)' : 'Password'}
-                 </label>
-                 <input
-                   type="password"
-                   value={form.password}
-                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                   placeholder={editingId ? 'Leave blank to keep unchanged' : ''}
-                 />
-               </div>
-               <div>
-                 <label className="block text-gray-700">Role</label>
-                 <select
-                   value={form.role}
-                   onChange={(e) => setForm({ ...form, role: e.target.value })}
-                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                 >
-                   <option value="user">User</option>
-                   <option value="admin">Admin</option>
-                 </select>
-               </div>
-             </div>
-             <button
-               type="submit"
-               className="px-4 py-2 mt-4 text-white bg-orange-500 rounded-lg hover:bg-orange-600"
-             >
-               {editingId ? 'Update User' : 'Create User'}
-             </button>
-             {editingId && (
-               <button
-                 type="button"
-                 onClick={() => {
-                   setForm({ name: '', email: '', password: '', role: 'user' });
-                   setEditingId(null);
-                 }}
-                 className="px-4 py-2 mt-4 ml-4 text-white bg-gray-500 rounded-lg hover:bg-gray-600"
-               >
-                 Cancel
-               </button>
-             )}
-           </form>
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 text-center text-red-500">
+        <p className="text-lg font-semibold">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
-           <h2 className="mb-4 text-2xl font-semibold text-orange-600">Users List</h2>
-           {users.length === 0 ? (
-             <p className="text-gray-600">No users available.</p>
-           ) : (
-             <div className="space-y-4">
-               {users.map((user) => (
-                 <div key={user._id} className="flex items-center justify-between p-4 bg-white rounded-lg shadow-md">
-                   <div>
-                     <p className="text-gray-800">Name: {user.name}</p>
-                     <p className="text-gray-600">Email: {user.email}</p>
-                     <p className="text-gray-600">Role: {user.role}</p>
-                   </div>
-                   <div className="space-x-2">
-                     <button
-                       onClick={() => handleEdit(user)}
-                       className="px-4 py-2 text-white bg-orange-500 rounded-lg hover:bg-orange-600"
-                     >
-                       Edit
-                     </button>
-                     <button
-                       onClick={() => handleDelete(user._id)}
-                       className="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600"
-                       disabled={user.role === 'admin'}
-                     >
-                       Delete
-                     </button>
-                   </div>
-                 </div>
-               ))}
-             </div>
-           )}
-         </div>
-       );
-     }
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold text-orange-600 mb-6">Manage Users</h1>
 
-     export default UsersAdmin;
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-semibold text-orange-600 mb-4">{editingId ? 'Edit User' : 'Create User'}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-gray-700 font-semibold">Name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold">Email</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold">
+              {editingId ? 'New Password (optional)' : 'Password'}
+            </label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder={editingId ? 'Leave blank to keep unchanged' : ''}
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold">Role</label>
+            <select
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex space-x-4">
+          <button
+            type="submit"
+            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            {editingId ? 'Update User' : 'Create User'}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ name: '', email: '', password: '', role: 'user' });
+                setEditingId(null);
+              }}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* List */}
+      <h2 className="text-2xl font-semibold text-orange-600 mb-4">Users List</h2>
+      {users.length === 0 ? (
+        <p className="text-gray-600">No users available.</p>
+      ) : (
+        <div className="space-y-4">
+          {users.map((user) => (
+            <div
+              key={user._id}
+              className="bg-white rounded-lg shadow-md p-4 flex justify-between items-center hover:shadow-xl transition-shadow duration-300"
+            >
+              <div>
+                <p className="text-gray-800 font-medium">Name: {user.name}</p>
+                <p className="text-gray-600">Email: {user.email}</p>
+                <p className="text-gray-600">Role: {user.role}</p>
+              </div>
+              <div className="space-x-2">
+                <button
+                  onClick={() => handleEdit(user)}
+                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(user._id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                  disabled={user.role === 'admin'}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default UsersAdmin;
