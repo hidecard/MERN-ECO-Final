@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { login as apiLogin, register as apiRegister } from '../lib/api';
+import { login as apiLogin, register as apiRegister } from '../src/lib/api';
 import { toast } from 'react-toastify';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode }  from 'jwt-decode';
 
 export const AuthContext = createContext();
 

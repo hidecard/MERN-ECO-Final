@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '../../lib/api';
+import { useAuth } from '../../../context/AuthContext';
+import { getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '../../lib/api.js';
 import { toast } from 'react-toastify';
 
 function UsersAdmin() {
-  const { user, loading: authLoading } = useAuth(); // Get user and auth loading state
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -14,7 +15,7 @@ function UsersAdmin() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (authLoading) return; // Wait for auth to finish loading
+      if (authLoading) return;
       if (!user || !user.token) {
         setError('Please log in as an admin');
         setLoading(false);
@@ -211,7 +212,7 @@ function UsersAdmin() {
         </div>
       </form>
 
-      {/* List */}
+      {/* Users List */}
       <h2 className="text-2xl font-semibold text-orange-600 mb-4">Users List</h2>
       {users.length === 0 ? (
         <p className="text-gray-600">No users available.</p>
@@ -237,7 +238,6 @@ function UsersAdmin() {
                 <button
                   onClick={() => handleDelete(user._id)}
                   className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                  disabled={user.role === 'admin'}
                 >
                   Delete
                 </button>
