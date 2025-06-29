@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const Category = require('../models/Category');
 
 // Get all users
 router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
@@ -83,6 +84,74 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req, res) =>
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Failed to delete user' });
+  }
+});
+
+
+// get all category 
+
+router.get('/categories' ,  authMiddleware, adminMiddleware, async (req , res ) => {
+    try{
+        const categories = await Category.find();
+        res.json(categories);
+    }catch{
+        res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+});
+
+// create category 
+
+router.post('/categories' , authMiddleware , adminMiddleware , async (req , res) => {
+  try{
+      const { name , description  } = req.body;
+      const existingCategory = await Category.findOne({ name });
+      if (existingCategory) {
+        return res.status(400).json({ message: 'Category already exists' });
+      }
+      const category = new Category({ name, description });
+      await category.save();
+      res.status(201).json(category);
+  }catch{
+      res.status(500).json({ message: 'Failed to create category' });
+  }
+})
+
+
+// update category
+
+router.put('/categories/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try{
+      const { name, description } = req.body;
+
+
+
+      const category = await Category.findByIdAndUpdate(
+        req.params.id,
+        { name, description },
+        { new: true }
+      );
+
+      if (!category) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      res.json(category);
+  }catch{
+      res.status(500).json({ message: 'Failed to update category' });
+  }
+});
+
+
+// delete category
+
+router.delete('/categories/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try{
+    const category = await Category.findByIdAndDelete(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.json({ message: 'Category deleted' });
+  }catch{
+    res.status(500).json({ message: 'Failed to delete category' });
   }
 });
 

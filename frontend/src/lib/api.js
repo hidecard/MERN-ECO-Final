@@ -72,3 +72,44 @@ export const deleteAdminUser = async (token, id) => {
   });
   return handleResponse(response);
 };
+
+
+// get admin category
+
+export const getAdminCategory = async (token) => {
+    const response = await fetch(`${API_URL}/admin/categories`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      });
+      return handleResponse(response);
+};
+
+// create category
+
+export const createAdminCategory = async (token , categoryData) => {
+    const response = await fetch(`${API_URL}/admin/categories`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(categoryData),
+      });
+      return handleResponse(response);
+}
+
+// update category
+
+export const updateAdminCategory = async (token, id, categoryData) => {
+    const response = await fetch(`${API_URL}/admin/categories/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(categoryData),
+      });
+      return handleResponse(response);
+}

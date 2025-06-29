@@ -23,4 +23,4 @@ const adminMiddleware = async (req, res, next) => {
   next();
 };
 
-module.exports = { authMiddleware, adminMiddleware };
+module.exports = { authMiddleware, adminMiddleware   };
