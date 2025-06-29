@@ -4,6 +4,7 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const Category = require('../models/Category');
+const Product = require('../models/Product');
 
 // Get all users
 router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
@@ -154,5 +155,66 @@ router.delete('/categories/:id', authMiddleware, adminMiddleware, async (req, re
     res.status(500).json({ message: 'Failed to delete category' });
   }
 });
+
+// get product 
+
+router.get('/products' , authMiddleware, adminMiddleware, async (req , res) => {
+  try{
+      const products = await Product.find();
+      res.json(products);
+  }catch{
+      res.status(400).json({ message: 'Failed to fetch products' });
+  }
+});
+
+//create product 
+
+router.post('/products', authMiddleware , adminMiddleware , async ( req , res) => {
+  try{
+      const product = new Product(req.body);
+      const existingProduct = await Product.findOne({ name: product.name });
+      if (existingProduct) {
+        return res.status(400).json({ message: 'Product already exists' });
+      }
+      await product.save();
+      res.status(201).json(product);
+  }catch{
+      res.status(400).json({ message: 'Failed to create product' });
+  }
+})
+
+// edit product
+
+router.put('/products/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { name, description, price, category, stock , imageURLs} = req.body;
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { name, description, price, category, stock , imageURLs },
+      { new: true }
+    );
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product);
+  } catch{
+    res.status(400).json({ message: 'Failed to update product' });
+  }
+});
+
+// product delete
+
+
+router.delete('/products/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try{
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json({ message: 'Product deleted' });
+  }catch{
+    res.status(500).json({ message: 'Failed to delete product' });
+  }
+})
 
 module.exports = router;

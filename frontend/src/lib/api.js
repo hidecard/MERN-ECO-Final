@@ -125,3 +125,4 @@ export const deleteAdminCategory = async (token, id) => {
       });
       return handleResponse(response);
 }
+
