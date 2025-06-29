@@ -113,3 +113,15 @@ export const updateAdminCategory = async (token, id, categoryData) => {
       });
       return handleResponse(response);
 }
+
+// delete category
+
+export const deleteAdminCategory = async (token, id) => {
+    const response = await fetch(`${API_URL}/admin/categories/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      });
+      return handleResponse(response);
+}
