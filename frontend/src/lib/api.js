@@ -137,5 +137,45 @@ export const getAdminProducts = async (token) => {
   return handleResponse(response); 
 }; 
 
+// create product 
+export const createAdminProduct = async (token, productData) => { 
+  console.log('Creating product:', productData); 
+  const response = await fetch(`${API_URL}/admin/products`, { 
+    method: 'POST', 
+    headers: { 
+      'Content-Type': 'application/json', 
+      Authorization: `Bearer ${token}`, 
+    }, 
+    body: JSON.stringify(productData), 
+  }); 
+  return handleResponse(response); 
+}; 
+
+// update product
+export const updateAdminProduct = async (token, id, productData) => {
+  console.log('Updating product:', productData);
+  const response = await fetch(`${API_URL}/admin/products/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+  return handleResponse(response);
+};
+
+// delete product
+
+export const deleteAdminProduct = async (token, id) => {
+  console.log('Deleting product:', id);
+  const response = await fetch(`${API_URL}/admin/products/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleResponse(response);
+};
 
 
