@@ -155,6 +155,8 @@ router.delete('/categories/:id', authMiddleware, adminMiddleware, async (req, re
     res.status(500).json({ message: 'Failed to delete category' });
   }
 });
+/* The code snippet provided is defining routes for handling CRUD operations related to products in an
+Express.js application. Here is a breakdown of what each part of the code is doing: */
 
 // get product 
 
