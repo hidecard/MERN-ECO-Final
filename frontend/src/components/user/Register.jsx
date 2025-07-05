@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link , useNavigate } from 'react-router-dom';
 import { register } from '../../lib/api';
 import { toast } from 'react-toastify';
-
 function Register() { 
   const [name, setName] = useState(''); 
   const [email, setEmail] = useState(''); 
@@ -33,9 +32,11 @@ function Register() {
     } 
   
     try { 
+      console.log('Registering with:', { name, email }); 
       const { token } = await register({ name, email, password }); 
       console.log('Register token:', token); 
       localStorage.setItem('token', token); 
+
       toast.success('Registered successfully'); 
       navigate('/'); 
     } catch (error) { 
@@ -45,7 +46,7 @@ function Register() {
     } finally { 
       setLoading(false); 
     } 
-  };
+  }; 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
