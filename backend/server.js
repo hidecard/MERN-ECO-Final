@@ -4,6 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const productRoutes = require('./routes/product');
+
 
 dotenv.config();
 
@@ -16,6 +18,8 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/products', productRoutes);
+
 
 // MongoDB Connection
 mongoose

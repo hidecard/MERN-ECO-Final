@@ -126,3 +126,16 @@ export const deleteAdminCategory = async (token, id) => {
       return handleResponse(response);
 }
 
+
+// get product
+
+export const getAdminProducts = async (token) => { 
+  console.log('Fetching admin products from:', `${API_URL}/admin/products`); 
+  const response = await fetch(`${API_URL}/admin/products`, { 
+    headers: { Authorization: `Bearer ${token}` }, 
+  }); 
+  return handleResponse(response); 
+}; 
+
+
+
